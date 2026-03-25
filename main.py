@@ -13,19 +13,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AsyncSessionLocal
 from sqlalchemy import text
 
 @app.on_event("startup")
 async def reset_stuck_projects():
-    async with AsyncSessionLocal() as db:
-        await db.execute(
-            text("UPDATE projects SET status='failed' WHERE status='generating'")
-        )
-        await db.commit()
-        print("✅ Reset any stuck generating projects")
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(
+                text("UPDATE projects SET status='failed' WHERE status='generating'")
+            )
+            await db.commit()
+            print("✅ Reset any stuck generating projects")
+    except Exception as e:
+        print(f"⚠️ Startup DB reset skipped: {e}")
 
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(projects_router, prefix="/api/projects")
